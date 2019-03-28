@@ -14,8 +14,8 @@ namespace DriveFileManager
 {
     class Program
     {
-        static string[] Scopes = { DriveService.Scope.Drive, DriveService.Scope.DriveFile };
-
+        static readonly string[] Scopes = { DriveService.Scope.Drive, DriveService.Scope.DriveFile };
+       
         static void Main(string[] args)
         {
             try
@@ -37,9 +37,9 @@ namespace DriveFileManager
         {
 
             UserCredential credential;
-            using (var stream = new FileStream("client_id.json", FileMode.Open, FileAccess.Read))
+            
+            using (var stream = new FileStream(Environment.CurrentDirectory + @"\client_id.json", FileMode.Open, FileAccess.Read))
             {
-
                 credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(stream).Secrets, Scopes, "user", CancellationToken.None);
             }
 
@@ -53,17 +53,23 @@ namespace DriveFileManager
             {
                 Name = "test.jpg"
             };
+
             FilesResource.CreateMediaUpload request;
-            using (var stream = new FileStream("test.jpg",
+            using (var stream = new FileStream(getWorkspaceLocation() + @"\test.jpg",
                                     FileMode.Open))
             {
-                request = service.Files.Create(
-                    fileMetadata, stream, "image/jpeg");
+                request = service.Files.Create(fileMetadata, stream, "image/jpeg");
                 request.Fields = "id";
                 request.Upload();
             }
             var file = request.ResponseBody;
             Console.WriteLine("File ID: " + file.Id);
+        }
+
+        private string getWorkspaceLocation()
+        {
+            string temp = Environment.CurrentDirectory; 
+            return temp.Remove(temp.Length-2); //duljina imena foldera - 2
         }
     }
 }
