@@ -35,10 +35,10 @@ namespace DriveFileManager
 
         private async Task Run()
         {
-
+            MimeTypeLookup mimeTypeLookup = new MimeTypeLookup();
             UserCredential credential;
             
-            using (var stream = new FileStream(Environment.CurrentDirectory + @"\client_id.json", FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(Directory.GetCurrentDirectory() + @"\client_id.json", FileMode.Open, FileAccess.Read))
             {
                 credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(stream).Secrets, Scopes, "user", CancellationToken.None);
             }
@@ -49,27 +49,31 @@ namespace DriveFileManager
                 ApplicationName = "GDrive File Manager",
             });
 
-            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            DirectoryInfo directory = new DirectoryInfo(getWorkspaceLocation());
+            foreach(var tempFile in directory.GetFiles())
             {
-                Name = "test.jpg"
-            };
+                var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                {
+                    Name = tempFile.ToString()
+                };
 
-            FilesResource.CreateMediaUpload request;
-            using (var stream = new FileStream(getWorkspaceLocation() + @"\test.jpg",
-                                    FileMode.Open))
-            {
-                request = service.Files.Create(fileMetadata, stream, "image/jpeg");
-                request.Fields = "id";
-                request.Upload();
-            }
-            var file = request.ResponseBody;
-            Console.WriteLine("File ID: " + file.Id);
+                FilesResource.CreateMediaUpload request;
+                using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
+                                        FileMode.Open))
+                {
+                    request = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
+                    request.Fields = "id";
+                    request.Upload();
+                }
+                var file = request.ResponseBody;
+                Console.WriteLine("File ID: " + file.Id);
+            } 
         }
 
         private string getWorkspaceLocation()
         {
-            string temp = Environment.CurrentDirectory; 
-            return temp.Remove(temp.Length-2); //duljina imena foldera - 2
+            string temp = Directory.GetCurrentDirectory(); 
+            return temp.Remove(temp.Length-2); //duljina imena foldera - 2 (kasnije maknuti mozda kad se spoji u .exe)
         }
     }
 }
