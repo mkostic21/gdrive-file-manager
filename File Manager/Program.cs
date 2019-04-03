@@ -9,12 +9,15 @@ using Google.Apis.Drive.v3.Data;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Util.Store;
 using Google.Apis.Services;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace DriveFileManager
 {
     class Program
     {
         static readonly string[] Scopes = { DriveService.Scope.Drive, DriveService.Scope.DriveFile };
+        static string applicationName = "GDrive File Manager";
        
         static void Main(string[] args)
         {
@@ -37,19 +40,24 @@ namespace DriveFileManager
         {
             MimeTypeLookup mimeTypeLookup = new MimeTypeLookup();
             UserCredential credential;
-            
+
             using (var stream = new FileStream(Directory.GetCurrentDirectory() + @"\client_id.json", FileMode.Open, FileAccess.Read))
             {
-                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(stream).Secrets, Scopes, "user", CancellationToken.None);
+                string credentialPath = Directory.GetCurrentDirectory() + @"\token.json";
+
+                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(stream).Secrets, Scopes, "user", CancellationToken.None, new FileDataStore(credentialPath, true));
             }
 
             var service = new DriveService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = "GDrive File Manager",
+                ApplicationName = applicationName,
             });
 
+
             DirectoryInfo directory = new DirectoryInfo(getWorkspaceLocation());
+            
+
             foreach(var tempFile in directory.GetFiles())
             {
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File()
@@ -57,17 +65,57 @@ namespace DriveFileManager
                     Name = tempFile.ToString()
                 };
 
-                FilesResource.CreateMediaUpload request;
-                using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
-                                        FileMode.Open))
+                bool fileExists = false;
+
+                DateTime fileModifiedTime = tempFile.LastWriteTime;
+
+                FilesResource.CreateMediaUpload uploadRequest;
+
+                FilesResource.ListRequest listRequest = service.Files.List();
+                listRequest.PageSize = 50;
+                listRequest.Q = "'root' in parents"; //samo main drive folder
+                listRequest.Spaces = "drive";
+                listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
+
+                IList<Google.Apis.Drive.v3.Data.File> driveFiles = listRequest.Execute().Files;
+                if (driveFiles != null && driveFiles.Count > 0)
                 {
-                    request = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
-                    request.Fields = "id";
-                    request.Upload();
+                    foreach (var driveFile in driveFiles)
+                    {
+                        Console.WriteLine(driveFile.Name + " " + driveFile.Id);
+                        
+                        if (driveFile.Name == tempFile.Name)
+                        {
+                            fileExists = true;
+
+                            if (driveFile.ModifiedTime < fileModifiedTime)
+                            {
+                                FilesResource.DeleteRequest deleteRequest;
+                                deleteRequest = service.Files.Delete(driveFile.Id);
+                                var deleteFile = deleteRequest.Execute();
+
+                                Console.WriteLine("deleted " + tempFile.Name);
+
+                                fileExists = false; //deleted
+                            }
+                        }
+                    }
                 }
-                var file = request.ResponseBody;
-                Console.WriteLine("File ID: " + file.Id);
-            } 
+                if (!fileExists)
+                {
+                    using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
+                                                        FileMode.Open))
+                    {
+                        uploadRequest = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
+                        uploadRequest.Upload();
+                    }
+                    var uploadFile = uploadRequest.ResponseBody;
+                    Console.WriteLine(tempFile.ToString() + "\t Uploaded successfully.");
+                }
+
+            }
+
+            Console.WriteLine("All files are up-to-date.");
         }
 
         private string getWorkspaceLocation()
