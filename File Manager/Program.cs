@@ -28,7 +28,7 @@ namespace DriveFileManager
                     Console.WriteLine("ERROR: " + e.Message);
                 }
             }
-            Console.WriteLine("Press any key to continue...");
+            Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
         }
 
@@ -70,7 +70,7 @@ namespace DriveFileManager
 
                 FilesResource.ListRequest listRequest = service.Files.List();
                 listRequest.PageSize = 50;
-                listRequest.Q = "'root' in parents"; //samo main drive folder
+                listRequest.Q = "'root' in parents and trashed=false"; //samo main drive folder
                 listRequest.Spaces = "drive";
                 listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
 
