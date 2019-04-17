@@ -57,6 +57,8 @@ namespace DriveFileManager
 
             foreach(var tempFile in directory.GetFiles())
             {
+                if (tempFile.Name.Contains(".lnk")) continue;
+
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File()
                 {
                     Name = tempFile.ToString()
