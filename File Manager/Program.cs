@@ -117,7 +117,7 @@ namespace DriveFileManager
 
         private string getWorkspaceLocation()
         {
-            const int EXE_FOLDER_LENGTH = 19;
+            const int EXE_FOLDER_LENGTH = 19; //GDrive File Manager - 19 znakova
             string temp = Directory.GetCurrentDirectory();
             return temp.Remove(temp.Length-EXE_FOLDER_LENGTH);
         }
