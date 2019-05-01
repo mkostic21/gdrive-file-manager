@@ -34,7 +34,7 @@ namespace DriveFileManager
 
         private async Task Run()
         {
-            MimeTypeLookup mimeTypeLookup = new MimeTypeLookup();
+            
             UserCredential credential;
 
             using (var stream = new FileStream(Directory.GetCurrentDirectory() + @"\client_id.json", FileMode.Open, FileAccess.Read))
@@ -50,103 +50,90 @@ namespace DriveFileManager
                 ApplicationName = applicationName,
             });
 
-
-            DirectoryInfo directory = new DirectoryInfo(getWorkspaceLocation());
+            DirectoryInfo directory = new DirectoryInfo(GetWorkspaceLocation());
 
             Console.WriteLine("Checking Files..." + Environment.NewLine);
+            
+            IList<Google.Apis.Drive.v3.Data.File> driveFolders = GetDriveFolders("root", service); //gdrive root
 
-
-            FilesResource.ListRequest listRequest = service.Files.List();
-            listRequest.PageSize = 100; 
-            listRequest.Q = "'root' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"; //samo main drive folder
-            listRequest.Spaces = "drive";
-            listRequest.Fields = "files(id, name)";
-            IList<Google.Apis.Drive.v3.Data.File> driveFolders = listRequest.Execute().Files;
-
-            //print(driveFolders, service);
-
-            //foreach (var d in driveFolders)
-            //{
-            //    Console.WriteLine(d.Name + "\t" + d.Id);
-            //}
-
-            foreach (var tempFolder in directory.GetDirectories())
+            foreach (var currentFolder in directory.GetDirectories())
             {
-                searchFolders(tempFolder, service, driveFolders); //recursion
+                if (currentFolder.Name == "GDrive File Manager") continue;
+                SearchFolders(currentFolder, service, "root"); //recursion
             }
+            {
+                //foreach (var tempFile in directory.GetFiles())
+                //{
+                //    if (tempFile.Name.Contains(".lnk")) continue; //shortcut
 
-            //foreach (var tempFile in directory.GetFiles())
-            //{
-            //    if (tempFile.Name.Contains(".lnk")) continue; //shortcut
+                //    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                //    {
+                //        Name = tempFile.ToString()
+                //    };
 
-            //    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-            //    {
-            //        Name = tempFile.ToString()
-            //    };
+                //    bool fileExists = false;
 
-            //    bool fileExists = false;
+                //    DateTime fileModifiedTime = tempFile.LastWriteTime;
 
-            //    DateTime fileModifiedTime = tempFile.LastWriteTime;
+                //    FilesResource.CreateMediaUpload uploadRequest;
 
-            //    FilesResource.CreateMediaUpload uploadRequest;
+                //    FilesResource.ListRequest listRequest = service.Files.List();
+                //    listRequest.PageSize = 50;
+                //    listRequest.Q = "'root' in parents  and trashed=false"; //samo main drive folder
+                //    listRequest.Spaces = "drive";
+                //    listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
 
-            //    FilesResource.ListRequest listRequest = service.Files.List();
-            //    listRequest.PageSize = 50;
-            //    listRequest.Q = "'root' in parents  and trashed=false"; //samo main drive folder
-            //    listRequest.Spaces = "drive";
-            //    listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
+                //    IList<Google.Apis.Drive.v3.Data.File> driveFiles = listRequest.Execute().Files;
+                //    if (driveFiles != null && driveFiles.Count > 0)
+                //    {
+                //        foreach (var driveFile in driveFiles)
+                //        {
+                //            //Console.WriteLine(driveFile.Name + " " + driveFile.Id);
 
-            //    IList<Google.Apis.Drive.v3.Data.File> driveFiles = listRequest.Execute().Files;
-            //    if (driveFiles != null && driveFiles.Count > 0)
-            //    {
-            //        foreach (var driveFile in driveFiles)
-            //        {
-            //            //Console.WriteLine(driveFile.Name + " " + driveFile.Id);
+                //            if (driveFile.Name == tempFile.Name)
+                //            {
+                //                fileExists = true;
 
-            //            if (driveFile.Name == tempFile.Name)
-            //            {
-            //                fileExists = true;
+                //                if (driveFile.ModifiedTime < fileModifiedTime)
+                //                {
+                //                    FilesResource.DeleteRequest deleteRequest;
+                //                    deleteRequest = service.Files.Delete(driveFile.Id);
+                //                    var deleteFile = deleteRequest.Execute();
 
-            //                if (driveFile.ModifiedTime < fileModifiedTime)
-            //                {
-            //                    FilesResource.DeleteRequest deleteRequest;
-            //                    deleteRequest = service.Files.Delete(driveFile.Id);
-            //                    var deleteFile = deleteRequest.Execute();
+                //                    fileExists = false; //deleted
+                //                }
+                //            }
+                //        }
+                //    }
+                //    if (!fileExists)
+                //    {
+                //        using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
+                //                                            FileMode.Open))
+                //        {
+                //            uploadRequest = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
+                //            uploadRequest.Upload();
+                //        }
+                //        var uploadFile = uploadRequest.ResponseBody;
+                //        Console.WriteLine(tempFile.ToString() + "\t Uploaded successfully.");
+                //    }
 
-            //                    fileExists = false; //deleted
-            //                }
-            //            }
-            //        }
-            //    }
-            //    if (!fileExists)
-            //    {
-            //        using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
-            //                                            FileMode.Open))
-            //        {
-            //            uploadRequest = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
-            //            uploadRequest.Upload();
-            //        }
-            //        var uploadFile = uploadRequest.ResponseBody;
-            //        Console.WriteLine(tempFile.ToString() + "\t Uploaded successfully.");
-            //    }
-
-            //}
-
+                //}
+            }
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
 
-        private string getWorkspaceLocation()
+        private string GetWorkspaceLocation()
         {
             const int EXE_FOLDER_LENGTH = 19; //GDrive File Manager - 19 znakova
             string temp = Directory.GetCurrentDirectory();
             return temp.Remove(temp.Length-EXE_FOLDER_LENGTH);
         }
 
-        private IList<Google.Apis.Drive.v3.Data.File> getCurrentFolders(string folderId, DriveService service)
+        private IList<Google.Apis.Drive.v3.Data.File> GetDriveFolders(string folderId, DriveService service)
         {
             FilesResource.ListRequest listRequest = service.Files.List();
-            listRequest.PageSize = 10;
-            listRequest.Q = "'"+folderId+"'"+" in parents and trashed=false and mimeType='application/vnd.google-apps.folder'";
+            listRequest.PageSize = 50;
+            listRequest.Q = "'" + folderId + "'" + " in parents and trashed=false and mimeType='application/vnd.google-apps.folder'";
             listRequest.Spaces = "drive";
             listRequest.Fields = "files(id, name)";
             IList<Google.Apis.Drive.v3.Data.File> driveFolders = listRequest.Execute().Files;
@@ -154,32 +141,120 @@ namespace DriveFileManager
             return driveFolders;
         }
 
-        private void searchFolders(DirectoryInfo currentDirectory, DriveService service, IList<Google.Apis.Drive.v3.Data.File> driveFolders)
+        private IList<Google.Apis.Drive.v3.Data.File> GetDriveFiles(string folderId, DriveService service)
         {
-            IList<Google.Apis.Drive.v3.Data.File> newDriveFolders;
+            FilesResource.ListRequest listRequest = service.Files.List();
+            listRequest.PageSize = 100;
+            listRequest.Q = "'" + folderId + "'" + "in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'";
+            listRequest.Spaces = "drive";
+            listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
+            IList<Google.Apis.Drive.v3.Data.File> driveFiles = listRequest.Execute().Files;
 
-            foreach(var folder in driveFolders) //drive
-            {
-                if (folder.Name == currentDirectory.Name) {
-                    Console.WriteLine(folder.Name);
-                    newDriveFolders = getCurrentFolders(folder.Id, service);
-                    foreach(var tempFolder in currentDirectory.GetDirectories()) //local
-                    {
-                        searchFolders(tempFolder, service, newDriveFolders);
-                    }
-                }
-            }
+            return driveFiles;
         }
 
-        //private void print(IList<Google.Apis.Drive.v3.Data.File> driveFolders, DriveService service)
-        //{
-        //    IList<Google.Apis.Drive.v3.Data.File> newDriveFolders;
-        //    foreach (var folder in driveFolders)
-        //    {
-        //        Console.WriteLine(folder.Name);
-        //        newDriveFolders = getCurrentFolders(folder.Id, service);
-        //        print(newDriveFolders, service);
-        //    }
-        //}
+        private void SearchFolders(DirectoryInfo currentFolder, DriveService service, string driveFolderId)
+        {
+            bool folderExists = false;
+
+            IList<Google.Apis.Drive.v3.Data.File> driveFolders = GetDriveFolders(driveFolderId, service);
+
+            foreach (var driveFolder in driveFolders)
+            {
+                if (driveFolder.Name == currentFolder.Name)
+                {
+                    folderExists = true;
+                    foreach (var folder in currentFolder.GetDirectories())
+                    {
+                        SearchFolders(folder, service, driveFolder.Id);
+                    }
+                    break;
+                }
+            }
+
+            if (!folderExists)
+            {
+                var newDriveFolder = CreateDriveFolder(driveFolderId, service, currentFolder.Name);
+                foreach(var folder in currentFolder.GetDirectories())
+                {
+                    SearchFolders(folder, service, newDriveFolder.Id);
+                }
+                
+            }
+
+            //bool folderExists = false;
+            //string driveFolderId = "root"; //default
+
+            //IList<Google.Apis.Drive.v3.Data.File> deeperDirectoryDriveFolders;
+            //IList<Google.Apis.Drive.v3.Data.File> driveFiles;
+
+            //foreach(var driveFolder in driveFolders) //drive
+            //{
+            //    driveFolderId = driveFolder.Id;
+
+            //    if (driveFolder.Name == currentFolder.Name) {
+            //        folderExists = true;
+            //        Console.WriteLine(driveFolder.Name); //debug purpose
+            //        deeperDirectoryDriveFolders = GetFolders(driveFolder.Id, service);
+            //        foreach(var directory in currentFolder.GetDirectories()) //local
+            //        {
+            //            SearchFolders(directory, service, deeperDirectoryDriveFolders);
+            //        }
+            //    }
+            //    //else //filecheck in current folder
+            //    //{
+            //    //    driveFiles = GetFiles(folder.Id, service);
+
+            //    //    foreach (var tempFile in currentFolder.GetFiles())
+            //    //    {
+            //    //        if (tempFile.Name.Contains(".lnk")) continue; //shortcut skip, maybe remove... idk
+
+            //    //        var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            //    //        {
+            //    //            Name = tempFile.Name,
+            //    //            Parents = new List<string>
+            //    //            {
+            //    //                folder.Id //parent folder in drive
+            //    //            },
+
+            //    //        };
+            //    //    }
+            //    //}
+            //}
+            //if (!folderExists)
+            //{
+            //    //FilesResource.CreateMediaUpload uploadRequest;
+            //    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            //    {
+            //        Name = currentFolder.Name,
+            //        MimeType = "application/vnd.google-apps.folder",
+            //        Parents = new List<string>
+            //        {
+
+            //        }
+            //    };
+            //    var request = service.Files.Create(fileMetadata);
+            //    var file = request.Execute();
+            //    Console.WriteLine("Created folder: " + file.Name);
+            //}
+        }
+
+        private Google.Apis.Drive.v3.Data.File CreateDriveFolder(string driveParentFolderId, DriveService service, string currentFolderName)
+        {
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            {
+                Name = currentFolderName,
+                MimeType = "application/vnd.google-apps.folder",
+                Parents = new List<string>
+                {
+                    driveParentFolderId
+                }
+            };
+            var request = service.Files.Create(fileMetadata);
+            var file = request.Execute();
+            Console.WriteLine("Created folder: " + file.Name);
+
+            return file;
+        }
     }
 }
