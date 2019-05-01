@@ -62,66 +62,6 @@ namespace DriveFileManager
                 if (currentFolder.Name == "GDrive File Manager") continue;
                 SearchFolders(currentFolder, service, "root"); //recursion
             }
-
-            
-            
-                //foreach (var tempFile in directory.GetFiles())
-                //{
-                //    if (tempFile.Name.Contains(".lnk")) continue; //shortcut
-
-                //    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-                //    {
-                //        Name = tempFile.ToString()
-                //    };
-
-                //    bool fileExists = false;
-
-                //    DateTime fileModifiedTime = tempFile.LastWriteTime;
-
-                //    FilesResource.CreateMediaUpload uploadRequest;
-
-                //    FilesResource.ListRequest listRequest = service.Files.List();
-                //    listRequest.PageSize = 50;
-                //    listRequest.Q = "'root' in parents  and trashed=false"; //samo main drive folder
-                //    listRequest.Spaces = "drive";
-                //    listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
-
-                //    IList<Google.Apis.Drive.v3.Data.File> driveFiles = listRequest.Execute().Files;
-                //    if (driveFiles != null && driveFiles.Count > 0)
-                //    {
-                //        foreach (var driveFile in driveFiles)
-                //        {
-                //            //Console.WriteLine(driveFile.Name + " " + driveFile.Id);
-
-                //            if (driveFile.Name == tempFile.Name)
-                //            {
-                //                fileExists = true;
-
-                //                if (driveFile.ModifiedTime < fileModifiedTime)
-                //                {
-                //                    FilesResource.DeleteRequest deleteRequest;
-                //                    deleteRequest = service.Files.Delete(driveFile.Id);
-                //                    var deleteFile = deleteRequest.Execute();
-
-                //                    fileExists = false; //deleted
-                //                }
-                //            }
-                //        }
-                //    }
-                //    if (!fileExists)
-                //    {
-                //        using (var stream = new FileStream(getWorkspaceLocation() + "\\" + tempFile.ToString(),
-                //                                            FileMode.Open))
-                //        {
-                //            uploadRequest = service.Files.Create(fileMetadata, stream, mimeTypeLookup.GetMimeType(tempFile.ToString()));
-                //            uploadRequest.Upload();
-                //        }
-                //        var uploadFile = uploadRequest.ResponseBody;
-                //        Console.WriteLine(tempFile.ToString() + "\t Uploaded successfully.");
-                //    }
-
-                //}
-            
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
 
@@ -187,62 +127,6 @@ namespace DriveFileManager
                     SearchFolders(folder, service, newDriveFolder.Id);
                 }
             }
-
-            //bool folderExists = false;
-            //string driveFolderId = "root"; //default
-
-            //IList<Google.Apis.Drive.v3.Data.File> deeperDirectoryDriveFolders;
-            //IList<Google.Apis.Drive.v3.Data.File> driveFiles;
-
-            //foreach(var driveFolder in driveFolders) //drive
-            //{
-            //    driveFolderId = driveFolder.Id;
-
-            //    if (driveFolder.Name == currentFolder.Name) {
-            //        folderExists = true;
-            //        Console.WriteLine(driveFolder.Name); //debug purpose
-            //        deeperDirectoryDriveFolders = GetFolders(driveFolder.Id, service);
-            //        foreach(var directory in currentFolder.GetDirectories()) //local
-            //        {
-            //            SearchFolders(directory, service, deeperDirectoryDriveFolders);
-            //        }
-            //    }
-            //    //else //filecheck in current folder
-            //    //{
-            //    //    driveFiles = GetFiles(folder.Id, service);
-
-            //    //    foreach (var tempFile in currentFolder.GetFiles())
-            //    //    {
-            //    //        if (tempFile.Name.Contains(".lnk")) continue; //shortcut skip, maybe remove... idk
-
-            //    //        var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-            //    //        {
-            //    //            Name = tempFile.Name,
-            //    //            Parents = new List<string>
-            //    //            {
-            //    //                folder.Id //parent folder in drive
-            //    //            },
-
-            //    //        };
-            //    //    }
-            //    //}
-            //}
-            //if (!folderExists)
-            //{
-            //    //FilesResource.CreateMediaUpload uploadRequest;
-            //    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-            //    {
-            //        Name = currentFolder.Name,
-            //        MimeType = "application/vnd.google-apps.folder",
-            //        Parents = new List<string>
-            //        {
-
-            //        }
-            //    };
-            //    var request = service.Files.Create(fileMetadata);
-            //    var file = request.Execute();
-            //    Console.WriteLine("Created folder: " + file.Name);
-            //}
         }
 
         private Google.Apis.Drive.v3.Data.File CreateDriveFolder(string driveParentFolderId, DriveService service, string currentFolderName)
