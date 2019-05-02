@@ -60,7 +60,11 @@ namespace DriveFileManager
             foreach (var currentFolder in directory.GetDirectories())
             {
                 if (currentFolder.Name == "GDrive File Manager") continue;
-                SearchFolders(currentFolder, service, "root"); //recursion
+                if (currentFolder.Name == "System Volume Information") continue; //Access denied
+                try
+                {
+                    SearchFolders(currentFolder, service, "root"); //recursion
+                }catch(Exception e) { Console.WriteLine(e.ToString()); }
             }
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
