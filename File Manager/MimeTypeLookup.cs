@@ -1004,6 +1004,7 @@ namespace DriveFileManager
             {".accdr", "application/msaccess.runtime"},
             {".accdt", "application/msaccess"},
             {".accdw", "application/msaccess.webapplication"},
+            {".acf", "text/plain"},
             {".accft", "application/msaccess.ftemplate"},
             {".acx", "application/internet-property-stream"},
             {".AddIn", "text/xml"},
