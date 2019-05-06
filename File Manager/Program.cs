@@ -71,9 +71,24 @@ namespace DriveFileManager
 
         private string GetWorkspaceLocation()
         {
-            const int EXE_FOLDER_LENGTH = 19; //GDrive File Manager - 19 znakova
-            string temp = Directory.GetCurrentDirectory();
-            return temp.Remove(temp.Length-EXE_FOLDER_LENGTH);
+            int lengthToRemove = 0;
+            string currentDir = Directory.GetCurrentDirectory();
+            int i = currentDir.Length;
+            while (currentDir[i-1] != '\\')
+            {
+                lengthToRemove++;
+                i--;
+            }
+            //do
+            //{
+            //    lengthToRemove++;
+            //    i--;
+            //} while (currentDir[i] != '\\');
+            return currentDir.Remove(currentDir.Length - lengthToRemove);
+
+            //const int EXE_FOLDER_LENGTH = 19; //GDrive File Manager - 19 znakova
+            //string temp = Directory.GetCurrentDirectory();
+            //return temp.Remove(temp.Length-EXE_FOLDER_LENGTH);
         }
 
         private IList<Google.Apis.Drive.v3.Data.File> GetDriveFolders(string folderId, DriveService service)
@@ -146,7 +161,7 @@ namespace DriveFileManager
             };
             var request = service.Files.Create(fileMetadata);
             var file = request.Execute();
-            Console.WriteLine("Created folder: " + file.Name);
+            //Console.WriteLine("Created folder: " + file.Name);
 
             return file;
         }
