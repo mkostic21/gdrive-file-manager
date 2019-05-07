@@ -25,7 +25,7 @@ namespace DriveFileManager
             {
                 foreach (var e in ex.InnerExceptions)
                 {
-                    Console.WriteLine("ERROR: " + e.Message);
+                    Console.WriteLine(e.Message);
                 }
             }
             Console.WriteLine("Press any key to exit...");
@@ -34,9 +34,7 @@ namespace DriveFileManager
 
         private async Task Run()
         {
-            
             UserCredential credential;
-
             using (var stream = new FileStream(Directory.GetCurrentDirectory() + @"\client_id.json", FileMode.Open, FileAccess.Read))
             {
                 string credentialPath = Directory.GetCurrentDirectory() + @"\token.json";
@@ -59,8 +57,8 @@ namespace DriveFileManager
             SearchFiles(directory, service, "root");
             foreach (var currentFolder in directory.GetDirectories())
             {
-                if (currentFolder.Name == "GDrive File Manager") continue;
-                if (currentFolder.Name == "System Volume Information") continue; //Access denied
+                if (currentFolder.Name == GetWorkspaceFolderName()) continue; //skips .exe's folder
+                if (currentFolder.Name == "System Volume Information") continue; //Access denied avoidance
                 try
                 {
                     SearchFolders(currentFolder, service, "root"); //recursion
@@ -69,32 +67,26 @@ namespace DriveFileManager
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
 
+
+
+        
+
+        private string GetWorkspaceFolderName()
+        {
+            return new DirectoryInfo(Directory.GetCurrentDirectory()).Name;
+        }
+
         private string GetWorkspaceLocation()
         {
-            int lengthToRemove = 0;
-            string currentDir = Directory.GetCurrentDirectory();
-            int i = currentDir.Length;
-            while (currentDir[i-1] != '\\')
-            {
-                lengthToRemove++;
-                i--;
-            }
-            //do
-            //{
-            //    lengthToRemove++;
-            //    i--;
-            //} while (currentDir[i] != '\\');
-            return currentDir.Remove(currentDir.Length - lengthToRemove);
-
-            //const int EXE_FOLDER_LENGTH = 19; //GDrive File Manager - 19 znakova
-            //string temp = Directory.GetCurrentDirectory();
-            //return temp.Remove(temp.Length-EXE_FOLDER_LENGTH);
+            string workspaceFullPath = Directory.GetCurrentDirectory();
+            string workspaceFolderName = GetWorkspaceFolderName();
+            return workspaceFullPath.Remove(workspaceFullPath.Length - workspaceFolderName.Length);
         }
 
         private IList<Google.Apis.Drive.v3.Data.File> GetDriveFolders(string folderId, DriveService service)
         {
             FilesResource.ListRequest listRequest = service.Files.List();
-            listRequest.PageSize = 50;
+            listRequest.PageSize = 100;
             listRequest.Q = "'" + folderId + "'" + " in parents and trashed=false and mimeType='application/vnd.google-apps.folder'";
             listRequest.Spaces = "drive";
             listRequest.Fields = "files(id, name)";
@@ -106,7 +98,7 @@ namespace DriveFileManager
         private IList<Google.Apis.Drive.v3.Data.File> GetDriveFiles(string folderId, DriveService service)
         {
             FilesResource.ListRequest listRequest = service.Files.List();
-            listRequest.PageSize = 50;
+            listRequest.PageSize = 100;
             listRequest.Q = "'" + folderId + "'" + " in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'";
             listRequest.Spaces = "drive";
             listRequest.Fields = "files(id, name, modifiedTime, createdTime)";
@@ -121,7 +113,6 @@ namespace DriveFileManager
 
             IList<Google.Apis.Drive.v3.Data.File> driveFolders = GetDriveFolders(driveFolderId, service);
             
-
             foreach (var driveFolder in driveFolders)
             {
                 if (driveFolder.Name == currentFolder.Name)
@@ -161,7 +152,6 @@ namespace DriveFileManager
             };
             var request = service.Files.Create(fileMetadata);
             var file = request.Execute();
-            //Console.WriteLine("Created folder: " + file.Name);
 
             return file;
         }
@@ -193,7 +183,7 @@ namespace DriveFileManager
 
             foreach (var currentFile in currentFolder.GetFiles())
             {
-                if (currentFile.Name.Contains(".lnk")) continue; //shortcut
+                if (currentFile.Name.Contains(".lnk")) continue; //skip shortcuts
                 
                 bool fileExists = false;
 
@@ -203,7 +193,6 @@ namespace DriveFileManager
                 {
                     foreach (var driveFile in driveFiles)
                     {
-
                         if (driveFile.Name == currentFile.Name)
                         {
                             fileExists = true;
