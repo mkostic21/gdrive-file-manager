@@ -25,7 +25,7 @@ namespace DriveFileManager
             {
                 foreach (var e in ex.InnerExceptions)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("ERROR: " + e.Message);
                 }
             }
             Console.WriteLine("Press any key to exit...");
@@ -62,7 +62,7 @@ namespace DriveFileManager
                 try
                 {
                     SearchFolders(currentFolder, service, "root"); //recursion
-                }catch(Exception e) { Console.WriteLine(e.ToString()); }
+                }catch(Exception e) { Console.WriteLine(e.Message); }
             }
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
