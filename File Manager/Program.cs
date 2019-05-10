@@ -14,7 +14,7 @@ namespace DriveFileManager
     {
         static readonly string[] Scopes = { DriveService.Scope.Drive, DriveService.Scope.DriveFile};
         static string applicationName = "GDrive File Manager";
-       
+
         static void Main(string[] args)
         {
             try
@@ -64,6 +64,7 @@ namespace DriveFileManager
                     SearchFolders(currentFolder, service, "root"); //recursion
                 }catch(Exception e) { Console.WriteLine(e.Message); }
             }
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(Environment.NewLine + "All files are up-to-date." + Environment.NewLine);
         }
 
